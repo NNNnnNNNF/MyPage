@@ -2,9 +2,113 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>我的第一个网页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>答案之书</title>
+    <style>
+        /* 这里是简单的样式，让页面看起来稍微神秘一点 */
+        body {
+            background-color: #121212; /* 深色背景 */
+            color: #ffffff;
+            font-family: "Microsoft YaHei", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify_content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            letter-spacing: 5px;
+        }
+        p {
+            color: #aaaaaa;
+            margin-bottom: 40px;
+        }
+        #answer-box {
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        #result {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffd700; /* 金色文字 */
+            opacity: 0; /* 初始隐藏 */
+            transition: opacity 1s ease; /* 渐变显示效果 */
+        }
+        button {
+            background-color: transparent;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background-color: #ffffff;
+            color: #121212;
+        }
+    </style>
 </head>
 <body>
-    <h1>halloh word</h1>
+
+    <h1>THE BOOK OF ANSWERS</h1>
+    <p>在心中默念你的问题，持续 5 秒钟，然后点击下方按钮</p>
+
+    <div id="answer-box">
+        <div id="result"></div>
+    </div>
+
+    <button onclick="getAnswer()">揭晓答案</button>
+
+    <script>
+        // 这里是庞大的答案库，包含了100种不同的回答
+        const answers = [
+            "毫无疑问", "肯定的", "现在不是时候", "再等等看", "哪怕只有一次，去尝试吧",
+            "别做白日梦了", "结果会让你惊讶", "保持现状", "去问问你的朋友", "听从你的直觉",
+            "是的", "不是", "绝对不行", "可能会付出代价", "值得一试",
+            "放下它吧", "这是你一生中最好的机会", "你需要更多的证据", "不要犹豫", "数到十再问我",
+            "这很荒谬", "你需要休息一下", "别被表象迷惑", "这不重要", "专注于当下",
+            "会有转机的", "太早了", "太晚了", "你需要改变方向", "坚持下去",
+            "不要放弃", "这会过去的", "你会后悔的", "这将是一场冒险", "小心行事",
+            "大胆一点", "没什么大不了的", "这是一个陷阱", "你需要帮助", "相信你自己",
+            "别让恐惧阻止你", "现在行动", "等待更好的时机", "这取决于你", "不要回头",
+            "你是对的", "你是错的", "重新开始", "这不是个好主意", "这正是你需要的",
+            "别担心", "顺其自然", "不要强求", "你会找到答案的", "这很复杂",
+            "简单点", "别想太多", "跟着心走", "用逻辑思考", "这不可能",
+            "这很有可能", "我不确定", "你需要耐心", "这会很有趣", "这将是一场灾难",
+            "最好的还在后头", "最坏的已经过去了", "享受过程", "关注结果", "这是一次学习的机会",
+            "你需要勇气", "你需要智慧", "别在这个问题上浪费时间", "这值得你投入", "这会让你快乐",
+            "这会让你痛苦", "这是命中注定", "这只是巧合", "你需要计划", "即兴发挥",
+            "别告诉任何人", "大声说出来", "这是一个秘密", "这显而易见", "你需要从不同的角度看问题",
+            "这不公平", "这很公平", "你会赢的", "你会输的", "这是一个平局",
+            "别急", "快点", "慢慢来", "这就是终点", "这只是开始",
+            "你会感谢我的", "你会恨我的", "这无关紧要", "这是至关重要的", "这就是答案"
+        ];
+
+        function getAnswer() {
+            const resultElement = document.getElementById("result");
+            const button = document.querySelector("button");
+
+            // 1. 获取随机数
+            const randomIndex = Math.floor(Math.random() * answers.length);
+            
+            // 2. 先把字变透明（隐藏旧答案）
+            resultElement.style.opacity = 0;
+
+            // 3. 稍微等待一下再显示新答案，制造“神秘感”
+            setTimeout(() => {
+                resultElement.innerText = answers[randomIndex];
+                resultElement.style.opacity = 1; // 显示出来
+            }, 300);
+        }
+    </script>
 </body>
 </html>
