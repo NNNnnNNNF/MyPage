@@ -3,112 +3,521 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>答案之书</title>
+    <title>命运之轮 - 每日塔罗</title>
     <style>
-        /* 这里是简单的样式，让页面看起来稍微神秘一点 */
+        :root {
+            --primary: #d4af37;
+            --bg: #0f0f1a;
+            --card-width: 100px;
+            --card-height: 160px;
+        }
+
+        @media (min-width: 600px) {
+            :root {
+                --card-width: 120px;
+                --card-height: 200px;
+            }
+        }
+
         body {
-            background-color: #121212; /* 深色背景 */
-            color: #ffffff;
-            font-family: "Microsoft YaHei", sans-serif;
+            font-family: 'Georgia', serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #0f0f1a 100%);
+            color: #ecf0f1;
+            margin: 0;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify_content: center;
-            height: 100vh;
-            margin: 0;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { color: var(--primary); text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            padding: 20px;
             text-align: center;
         }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            letter-spacing: 5px;
+
+        .stage {
+            height: 300px;
+            width: 100%;
+            position: relative;
+            perspective: 1000px;
+            margin-bottom: 50px;
         }
-        p {
-            color: #aaaaaa;
-            margin-bottom: 40px;
-        }
-        #answer-box {
-            min-height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-        #result {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #ffd700; /* 金色文字 */
-            opacity: 0; /* 初始隐藏 */
-            transition: opacity 1s ease; /* 渐变显示效果 */
-        }
-        button {
-            background-color: transparent;
-            border: 2px solid #ffffff;
-            color: #ffffff;
-            padding: 15px 40px;
-            font-size: 1.2rem;
+
+        .card-container {
+            width: var(--card-width);
+            height: var(--card-height);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin-left: calc(var(--card-width) / -2);
+            margin-top: calc(var(--card-height) / -2);
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer;
-            border-radius: 50px;
-            transition: all 0.3s;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+            z-index: 1;
         }
-        button:hover {
-            background-color: #ffffff;
-            color: #121212;
+
+        .stage .card-container:hover {
+            z-index: 100 !important;
+            filter: brightness(1.2);
+        }
+        
+        .result-card-visual {
+            pointer-events: none;
+            cursor: default;
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            border: 2px solid #4a4a4a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            background-color: #2c0e37;
+        }
+
+        .card-back {
+            background-image: 
+                radial-gradient(var(--primary) 15%, transparent 16%),
+                linear-gradient(45deg, transparent 48%, var(--primary) 48%, var(--primary) 52%, transparent 52%),
+                linear-gradient(-45deg, transparent 48%, var(--primary) 48%, var(--primary) 52%, transparent 52%);
+            background-size: 20px 20px, 10px 10px, 10px 10px;
+            border: 2px solid #5e3c6d;
+        }
+        
+        .card-back::after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 40%;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            background: rgba(0,0,0,0.3);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .card-front {
+            background: #f4e4bc;
+            color: #2c3e50;
+            transform: rotateY(180deg);
+            flex-direction: column;
+            padding: 10px;
+            border: 4px solid var(--primary);
+        }
+
+        .card-name { font-weight: bold; font-size: 0.9rem; margin-top: 5px; }
+        .card-num { font-size: 0.8rem; color: #7f8c8d; }
+
+        .flipped { transform: rotateY(180deg) !important; }
+        .flipped-reversed { transform: rotateY(180deg) rotateZ(180deg) !important; }
+
+        .shuffling-state { transition: transform 0.2s ease-in-out; }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 40px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 10px;
+        }
+        .btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
+        .btn:disabled { border-color: #555; color: #555; cursor: not-allowed; box-shadow: none; }
+        
+        .hidden { display: none !important; }
+
+        .result-box {
+            text-align: left;
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+            animation: slideIn 0.8s ease;
+        }
+        
+        .result-card-visual {
+            position: relative; left: auto; top: auto; margin: 0; transform: none;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .keyword-box {
+            display: inline-block;
+            background: rgba(212, 175, 55, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #ffeba7;
+        }
+
+        /* 倒计时提示样式 */
+        .cooldown-info {
+            color: #aaa;
+            margin-top: 15px;
+            font-style: italic;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
 
-    <h1>THE BOOK OF ANSWERS</h1>
-    <p>在心中默念你的问题，持续 5 秒钟，然后点击下方按钮</p>
+<div class="container">
+    <header>
+        <h1>Daily Tarot</h1>
+        <p style="color: #888; font-style: italic;">每日一占，指引迷津</p>
+    </header>
 
-    <div id="answer-box">
-        <div id="result"></div>
+    <div id="section-start">
+        <h3 style="margin-bottom: 30px;">今日运势</h3>
+        <p id="welcome-text">保持内心平静，默念你的问题</p>
+        <button id="start-btn" class="btn" onclick="initGame()">开始抽取今日指引</button>
+        <div id="cooldown-timer" class="cooldown-info hidden"></div>
     </div>
 
-    <button onclick="getAnswer()">揭晓答案</button>
+    <div id="section-deck" class="hidden">
+        <h3 id="instruction">洗牌中...</h3>
+        <div class="stage" id="card-stage"></div>
+    </div>
 
-    <script>
-        // 这里是庞大的答案库，包含了100种不同的回答
-        const answers = [
-            "毫无疑问", "肯定的", "现在不是时候", "再等等看", "哪怕只有一次，去尝试吧",
-            "别做白日梦了", "结果会让你惊讶", "保持现状", "去问问你的朋友", "听从你的直觉",
-            "是的", "不是", "绝对不行", "可能会付出代价", "值得一试",
-            "放下它吧", "这是你一生中最好的机会", "你需要更多的证据", "不要犹豫", "数到十再问我",
-            "这很荒谬", "你需要休息一下", "别被表象迷惑", "这不重要", "专注于当下",
-            "会有转机的", "太早了", "太晚了", "你需要改变方向", "坚持下去",
-            "不要放弃", "这会过去的", "你会后悔的", "这将是一场冒险", "小心行事",
-            "大胆一点", "没什么大不了的", "这是一个陷阱", "你需要帮助", "相信你自己",
-            "别让恐惧阻止你", "现在行动", "等待更好的时机", "这取决于你", "不要回头",
-            "你是对的", "你是错的", "重新开始", "这不是个好主意", "这正是你需要的",
-            "别担心", "顺其自然", "不要强求", "你会找到答案的", "这很复杂",
-            "简单点", "别想太多", "跟着心走", "用逻辑思考", "这不可能",
-            "这很有可能", "我不确定", "你需要耐心", "这会很有趣", "这将是一场灾难",
-            "最好的还在后头", "最坏的已经过去了", "享受过程", "关注结果", "这是一次学习的机会",
-            "你需要勇气", "你需要智慧", "别在这个问题上浪费时间", "这值得你投入", "这会让你快乐",
-            "这会让你痛苦", "这是命中注定", "这只是巧合", "你需要计划", "即兴发挥",
-            "别告诉任何人", "大声说出来", "这是一个秘密", "这显而易见", "你需要从不同的角度看问题",
-            "这不公平", "这很公平", "你会赢的", "你会输的", "这是一个平局",
-            "别急", "快点", "慢慢来", "这就是终点", "这只是开始",
-            "你会感谢我的", "你会恨我的", "这无关紧要", "这是至关重要的", "这就是答案"
-        ];
+    <div id="section-result" class="hidden">
+        <h3>命运启示</h3>
+        <div id="result-content"></div>
+        
+        <div id="result-actions" style="margin-top: 20px;">
+            <p id="result-cooldown-msg" class="cooldown-info"></p>
+            <button id="restart-btn" class="btn hidden" onclick="location.reload()">新的占卜</button>
+        </div>
+    </div>
+</div>
 
-        function getAnswer() {
-            const resultElement = document.getElementById("result");
-            const button = document.querySelector("button");
+<script>
+    /* === 塔罗数据 === */
+   const tarotData = [
+        { name: "愚者", num: "0", desc_up: "现在是开启新旅程的绝佳时机。不要被未知的恐惧束缚，保持一颗赤子之心，大胆迈出第一步。你的直觉比经验更重要，冒险将带来意想不到的收获。", desc_rev: "你可能在没有准备好的情况下就盲目行动，或者因为过于鲁莽而忽视了脚下的悬崖。现在需要停下来检查装备，不要为了改变而改变，警惕不切实际的幻想。" },
+        { name: "魔术师", num: "I", desc_up: "你拥有达成目标所需的所有资源和能力。只要你集中意志，将想法付诸行动，事情就会按你的计划发展。沟通能力和创造力是你此刻最强大的武器。", desc_rev: "你可能感到才华无处施展，或者正在通过欺骗和操纵来达到目的。这暗示了沟通不畅或计划的落实出现了阻碍，由于缺乏意志力，好的开局可能导致平庸的结尾。" },
+        { name: "女祭司", num: "II", desc_up: "答案不在外界，而在你的内心深处。相信你的第六感和直觉，静下心来倾听内心的声音。现在不适合大张旗鼓的行动，而适合冷静的观察和学习。", desc_rev: "你忽略了自己的直觉，或者过于情绪化导致无法理性判断。秘密可能会被揭穿，或者你正在表现得过于冷漠和封闭，拒绝了必要的交流。" },
+        { name: "皇后", num: "III", desc_up: "富足与收获的象征。无论是物质财富还是情感关系，都将进入一个丰盛的阶段。这是孕育新计划、享受生活、感受爱与美的时刻。", desc_rev: "你可能过度依赖他人，或者在物质享受上挥霍无度。这可能暗示了情感上的窒息感，或者在创造性项目上遇到了瓶颈，需要重新审视你的动机。" },
+        { name: "皇帝", num: "IV", desc_up: "局面尽在掌握。你需要展现出领导力和决断力，建立秩序和规则。只有脚踏实地、逻辑严密地规划，才能巩固目前的成就。", desc_rev: "控制欲过强可能引起反弹，或者你正在面对一个暴君般的人物。另一方面，也可能暗示你自己缺乏自律，生活显得混乱无序，导致权威丧失。" },
+        { name: "教皇", num: "V", desc_up: "寻求传统智慧或专业人士的指引将不仅有益。遵循既定的社会规范和道德准则行事，参与团队或组织会给你带来力量。这通常通过学习或精神指导来实现。", desc_rev: "不要盲从权威，现在是打破常规的时候。你可能感到被传统的观念束缚，渴望寻找属于自己的独特道路。小心被错误的建议误导。" },
+        { name: "恋人", num: "VI", desc_up: "面临重要的选择，通常涉及价值观或人际关系。这预示着和谐的结合、热情的爱恋，或者在合作中达成了完美的共识。听从内心的渴望。", desc_rev: "关系出现裂痕，或者面临诱惑做出了错误的选择。这暗示了内部的不和谐、沟通失败，或者因为逃避责任而导致的分离。" },
+        { name: "战车", num: "VII", desc_up: "只要保持强大的意志力和自律，你就能战胜矛盾，取得胜利。尽管前路充满挑战和竞争，但快速的行动和坚定的目标感将带你冲过终点。", desc_rev: "失控的信号。你可能被情绪左右，或者在方向上出现了迷茫。强行推进可能会导致翻车，需要停下来重新调整节奏，避免不必要的冲突。" },
+        { name: "力量", num: "VIII", desc_up: "真正的力量不是武力，而是以柔克刚的韧性。用耐心和包容去面对困难，你拥有足够的内在勇气去驯服失控的局面。", desc_rev: "你可能感到内心软弱，失去了自信，或者被本能的恐惧所压倒。不要在此时选择逃避，承认自己的脆弱反而是重建力量的开始。" },
+        { name: "隐士", num: "IX", desc_up: "暂时从人群中抽离，享受独处的时光。现在是通过内省寻找真理的时候，外界的喧嚣会干扰你的判断。独自一人并不代表孤独，而是为了看清方向。", desc_rev: "过度的孤立导致了与现实的脱节。你可能因为害怕社交而拒绝帮助，或者固执己见拒绝听取他人的建议。是时候走出洞穴了。" },
+        { name: "命运之轮", num: "X", desc_up: "不可抗拒的改变正在发生。运势正在好转，机遇突然降临。顺应生活的潮流，不要试图抵抗，这是一个转折点，将把你带向新的阶段。", desc_rev: "运气暂时不佳，计划遭遇延误。你可能在抗拒必须发生的改变，试图逆流而上。保持耐心，低谷只是周期的一部分，并非永恒。" },
+        { name: "正义", num: "XI", desc_up: "因果循环，种瓜得瓜。现在的局面是你过去行为的公正结果。保持诚实和客观，法律或合约相关事务将得到公正的裁决。", desc_rev: "你可能遭遇了不公，或者自己在逃避责任。偏见和主观情绪蒙蔽了真相。如果试图走捷径或欺骗，最终会付出代价。" },
+        { name: "倒吊人", num: "XII", desc_up: "换个角度看世界，你会得到全新的启示。目前的停滞是必要的，通过暂时的牺牲或等待，你将获得精神上的成长。不要急于挣脱。", desc_rev: "无谓的牺牲，或者因为固执而陷入僵局。你可能在扮演受害者，却不愿做出实际的改变。赶紧从自我设限的思维中解脱出来。" },
+        { name: "死神", num: "XIII", desc_up: "彻底的结束与新的开始。某件事物必须消亡，新的机会才能生长。不要留恋过去，拥抱这种必然的转变，这是重生的痛苦与喜悦。", desc_rev: "你极其抗拒改变，紧抓着已经腐朽的关系或过去不放。这种僵持只会延长痛苦。必须学会放手，否则无法前行。" },
+        { name: "节制", num: "XIV", desc_up: "平衡与融合是关键。不要走极端，寻找中庸之道。通过耐心的调和与沟通，原本对立的事物可以完美的结合。疗愈正在发生。", desc_rev: "生活失去了平衡。你可能过度放纵、情绪失控，或者在两个选择之间反复横跳。缺乏耐心导致事情搞砸，需要重新找回内心的平静。" },
+        { name: "恶魔", num: "XV", desc_up: "被物质欲望或不健康的关系所束缚。你可能沉迷于某种瘾症，或者为了金钱出卖了灵魂。虽然这带来了短暂的快感，但你失去了自由。", desc_rev: "觉醒的时刻。你开始意识到束缚你的枷锁其实是你自己戴上的。现在你有机会打破恶性循环，重获自由，但这需要极大的勇气。" },
+        { name: "高塔", num: "XVI", desc_up: "突如其来的剧变。建立在虚假基础上的事物将崩塌。虽然这看起来像一场灾难，但它打破了幻象，让你看清了残酷的真相。这是痛苦的启蒙。", desc_rev: "你勉强维持着摇摇欲坠的现状，拒绝面对必然的崩溃。这只是在拖延痛苦的到来。内部的压抑如果不释放，最终会造成更大的破坏。" },
+        { name: "星星", num: "XVII", desc_up: "希望之星在闪耀。在经历了动荡后，宁静和灵感降临。相信未来，你的愿望有机会实现。这是一个治愈身心、重新充满理想的时刻。", desc_rev: "失去了希望，感到悲观和无助。你可能好高骛远，追求虚幻的目标而忽视了现实的努力。不要放弃信仰，星星依然在云层之后。" },
+        { name: "月亮", num: "XVIII", desc_up: "前方模糊不清，潜意识的恐惧浮现。事物并非表面看起来那样，小心谎言和幻觉。在黑暗中摸索时，依靠直觉比依靠眼睛更可靠。", desc_rev: "迷雾逐渐散去，真相开始浮出水面。恐惧减退，你开始理解之前的困惑是由什么引起的。这是一个从噩梦中醒来的过程。" },
+        { name: "太阳", num: "XIX", desc_up: "巨大的成功、快乐和活力。所有阴霾一扫而空，事情清晰明朗。这是一个充满正能量的时刻，享受众人的瞩目和内心的喜悦吧。", desc_rev: "虽然还是积极的，但成功可能有所延迟，或者你对快乐的期望过高导致了失落。也许你有些过度自信或傲慢，需要稍微收敛光芒。" },
+        { name: "审判", num: "XX", desc_up: "听从内心的召唤，做出重大的决定。过去的努力现在到了结算的时候。这是一个觉醒和复活的时刻，告别旧我，迎接新的人生阶段。", desc_rev: "你正在逃避关键的决定，因为害怕承担责任。过去的阴影在纠缠你，导致你无法前进。如果不解决遗留问题，就无法获得真正的解脱。" },
+        { name: "世界", num: "XXI", desc_up: "完美的结局，达成目标。你完成了一个重要的生命周期，感到圆满和整合。现在是庆祝成就、准备开启下一个更高阶循环的时候。", desc_rev: "离成功仅一步之遥，却因为某种原因停滞不前。感觉不够圆满，或者心中仍有缺憾。需要检查是否有什么细节被忽略，导致无法闭环。" }
+    ];
 
-            // 1. 获取随机数
-            const randomIndex = Math.floor(Math.random() * answers.length);
-            
-            // 2. 先把字变透明（隐藏旧答案）
-            resultElement.style.opacity = 0;
+    let deck = [];
+    let isDrawing = false;
+    const COOLDOWN_TIME = 60 * 60 * 1000; // 1小时，单位毫秒
 
-            // 3. 稍微等待一下再显示新答案，制造“神秘感”
-            setTimeout(() => {
-                resultElement.innerText = answers[randomIndex];
-                resultElement.style.opacity = 1; // 显示出来
-            }, 300);
+    // 页面加载时检查状态
+    window.onload = function() {
+        checkCooldown();
+    };
+
+    function checkCooldown() {
+        const lastTime = localStorage.getItem('tarot_last_time');
+        const lastCardJson = localStorage.getItem('tarot_last_card');
+        
+        if (lastTime) {
+            const elapsed = Date.now() - parseInt(lastTime);
+            if (elapsed < COOLDOWN_TIME) {
+                // 还在冷却中
+                if (lastCardJson) {
+                    // 如果有上次的卡牌数据，直接显示结果页
+                    const card = JSON.parse(lastCardJson);
+                    document.getElementById('section-start').classList.add('hidden');
+                    // 直接调用显示结果，但不播放动画，立即显示
+                    showResults(card, false); 
+                    startTimer(COOLDOWN_TIME - elapsed);
+                } else {
+                    // 异常情况：有时间但无卡牌，显示倒计时禁止开始
+                    disableStartButton(COOLDOWN_TIME - elapsed);
+                }
+            } else {
+                // 冷却已过
+                document.getElementById('start-btn').disabled = false;
+            }
         }
-    </script>
+    }
+
+    function startTimer(remainingTime) {
+        const timerDiv = document.getElementById('result-cooldown-msg');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // 隐藏重开按钮，显示倒计时
+        restartBtn.classList.add('hidden');
+        timerDiv.classList.remove('hidden');
+
+        function update() {
+            if (remainingTime <= 0) {
+                timerDiv.innerText = "冷却时间已过，可以开始新的占卜。";
+                restartBtn.classList.remove('hidden');
+                return;
+            }
+            
+            const minutes = Math.floor(remainingTime / 60000);
+            const seconds = Math.floor((remainingTime % 60000) / 1000);
+            timerDiv.innerHTML = `今日指引已生效。<br>下次占卜倒计时：${minutes}分 ${seconds}秒`;
+            
+            remainingTime -= 1000;
+            setTimeout(update, 1000);
+        }
+        update();
+    }
+
+    function disableStartButton(remainingTime) {
+        const btn = document.getElementById('start-btn');
+        const timerDiv = document.getElementById('cooldown-timer');
+        btn.disabled = true;
+        btn.innerText = "今日指引已生效";
+        timerDiv.classList.remove('hidden');
+
+        function update() {
+            if (remainingTime <= 0) {
+                btn.disabled = false;
+                btn.innerText = "开始抽取今日指引";
+                timerDiv.classList.add('hidden');
+                return;
+            }
+            const minutes = Math.floor(remainingTime / 60000);
+            const seconds = Math.floor((remainingTime % 60000) / 1000);
+            timerDiv.innerText = `下次开启时间：${minutes}分 ${seconds}秒`;
+            remainingTime -= 1000;
+            setTimeout(update, 1000);
+        }
+        update();
+    }
+
+    function initGame() {
+        document.getElementById('section-start').classList.add('hidden');
+        document.getElementById('section-deck').classList.remove('hidden');
+        deck = generateDeck();
+        renderDeck();
+    }
+
+    function generateDeck() {
+        let tempDeck = [...tarotData];
+        for (let i = tempDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tempDeck[i], tempDeck[j]] = [tempDeck[j], tempDeck[i]];
+        }
+        return tempDeck.map(card => ({
+            ...card,
+            reversed: Math.random() > 0.3,
+            id: Math.random().toString(36).substr(2, 9)
+        }));
+    }
+
+    function createCardElement(index) {
+        let div = document.createElement('div');
+        div.className = 'card-container';
+        div.innerHTML = `
+            <div class="card-face card-back"></div>
+            <div class="card-face card-front">
+                <div style="font-size:2rem">?</div>
+            </div>
+        `;
+        return div;
+    }
+
+    function renderDeck() {
+        const stage = document.getElementById('card-stage');
+        stage.innerHTML = '';
+        
+        const totalCards = 22; 
+        const cardElements = [];
+
+        for(let i=0; i<totalCards; i++) {
+            let cardEl = createCardElement(i);
+            let randomRot = (Math.random() - 0.5) * 5;
+            cardEl.style.transform = `translate(0, 0) rotate(${randomRot}deg)`;
+            cardEl.onclick = function() { handleCardClick(this, i) };
+            stage.appendChild(cardEl);
+            cardElements.push(cardEl);
+        }
+
+        setTimeout(() => {
+            shuffleAnimation(cardElements);
+        }, 100);
+    }
+
+    function shuffleAnimation(elements) {
+        let shuffleCount = 0;
+        const maxShuffles = 5;
+
+        function step() {
+            if (shuffleCount >= maxShuffles) {
+                elements.forEach(el => {
+                    el.classList.remove('shuffling-state');
+                    el.style.transform = `translate(0, 0) rotate(0deg)`;
+                });
+                setTimeout(spreadCards, 500); 
+                return;
+            }
+
+            elements.forEach(el => {
+                el.classList.add('shuffling-state');
+                const x = (Math.random() - 0.5) * 60; 
+                const y = (Math.random() - 0.5) * 60; 
+                const r = (Math.random() - 0.5) * 30; 
+                el.style.zIndex = Math.floor(Math.random() * 22);
+                el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg)`;
+            });
+
+            shuffleCount++;
+            setTimeout(step, 200); 
+        }
+        step();
+    }
+
+    function spreadCards() {
+        const cards = document.querySelectorAll('.card-container');
+        const total = cards.length;
+        
+        cards.forEach((c, index) => {
+            c.style.zIndex = index; 
+            const angleDeg = -60 + (index * (120 / (total - 1)));
+            const offsetX = (index - (total - 1) / 2) * 40; 
+            const offsetY = Math.abs(index - (total - 1) / 2) * 5;
+
+            c.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${angleDeg}deg)`;
+            
+            c.onmouseenter = function() {
+                if(!c.getAttribute('data-selected')) {
+                   c.style.transform = `translate(${offsetX}px, ${offsetY - 20}px) rotate(${angleDeg}deg) scale(1.1)`;
+                }
+            };
+            c.onmouseleave = function() {
+                if(!c.getAttribute('data-selected')) {
+                   c.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${angleDeg}deg)`;
+                }
+            };
+        });
+        
+        isDrawing = true;
+        document.getElementById('instruction').innerText = "洗牌完成，请凭直觉抽取一张";
+    }
+
+    function handleCardClick(element, visualIndex) {
+        if (!isDrawing) return;
+        if (element.getAttribute('data-selected')) return;
+
+        isDrawing = false; // 只能选一张
+        element.setAttribute('data-selected', 'true');
+        
+        // 飞出动画
+        element.style.zIndex = 200;
+        element.style.transition = 'transform 0.8s ease-in, opacity 0.8s ease-in';
+        element.style.transform = `translate(0, -300px) scale(1.2)`;
+        element.style.opacity = '0'; 
+
+        // 获取结果
+        let cardData = deck[visualIndex]; // 直接取对应index的牌，或者deck[0]也可以因为洗过了
+        
+        document.getElementById('instruction').innerText = "正在解析星象...";
+        
+        // 记录到 localStorage
+        localStorage.setItem('tarot_last_time', Date.now());
+        localStorage.setItem('tarot_last_card', JSON.stringify(cardData));
+
+        setTimeout(() => {
+            showResults(cardData, true);
+        }, 1000);
+    }
+
+    // 显示结果
+    // card: 牌数据
+    // animate: 是否播放翻牌动画（如果是从缓存加载的，则设为false直接显示）
+    function showResults(card, animate = true) {
+        document.getElementById('section-deck').classList.add('hidden');
+        document.getElementById('section-result').classList.remove('hidden');
+        
+        const container = document.getElementById('result-content');
+        container.innerHTML = ''; 
+        
+        let wrapper = document.createElement('div');
+        wrapper.className = 'result-box';
+        if (!animate) wrapper.style.animation = 'none';
+        
+        let cardHtml = `
+            <div style="display:flex; flex-direction: column; align-items:center; margin-bottom:15px; flex-shrink:0;">
+                <div class="card-container result-card-visual" id="res-card-0">
+                    <div class="card-face card-back"></div>
+                    <div class="card-face card-front" style="background:${card.reversed ? '#e0e0e0' : '#f4e4bc'}">
+                        <div class="card-num">${card.num}</div>
+                        <div class="card-name">${card.name}</div>
+                        <div style="margin-top:5px; font-size:0.8rem; color:${card.reversed ? '#c0392b' : '#27ae60'}">
+                            ${card.reversed ? '逆位' : '正位'}
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:10px; color: var(--primary); font-weight:bold;">今日指引</div>
+            </div>
+            <div>
+                <div class="keyword-box">${card.name} ${card.reversed ? '(逆位)' : '(正位)'}</div>
+                <p style="line-height: 1.8; font-size: 1.05rem;">
+                    ${card.reversed ? card.desc_rev : card.desc_up}
+                </p>
+            </div>
+        `;
+        
+        wrapper.innerHTML = cardHtml;
+        if (window.innerWidth > 600) {
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'flex-start';
+            wrapper.style.gap = '20px';
+            wrapper.innerHTML = cardHtml; 
+        }
+        container.appendChild(wrapper);
+
+        if (animate) {
+            // 播放翻牌动画
+            setTimeout(() => {
+                let visualCard = document.getElementById(`res-card-0`);
+                visualCard.classList.add(card.reversed ? 'flipped-reversed' : 'flipped');
+            }, 500);
+            
+            // 开始倒计时
+            startTimer(COOLDOWN_TIME);
+        } else {
+            // 直接显示翻开状态
+            let visualCard = document.getElementById(`res-card-0`);
+            visualCard.style.transition = 'none'; // 禁用动画
+            visualCard.classList.add(card.reversed ? 'flipped-reversed' : 'flipped');
+        }
+    }
+</script>
+
 </body>
 </html>
