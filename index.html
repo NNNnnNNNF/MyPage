@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>命运之轮</title>
+    <title>占卜</title>
     <style>
         :root {
             --primary: #d4af37;
@@ -187,9 +187,9 @@
     </header>
 
     <div id="section-start">
-        <h3 style="margin-bottom: 30px;">今日运势</h3>
+        <h3 style="margin-bottom: 30px;">占卜运势</h3>
         <p id="welcome-text">保持内心平静，默念你的问题</p>
-        <button id="start-btn" class="btn" onclick="initGame()">开始抽取今日指引</button>
+        <button id="start-btn" class="btn" onclick="initGame()">开始抽取占卜指引</button>
         <div id="cooldown-timer" class="cooldown-info hidden"></div>
     </div>
 
@@ -238,7 +238,7 @@
 
     let deck = [];
     let isDrawing = false;
-    const COOLDOWN_TIME = 60 * 60 * 1000; // 1小时，单位毫秒
+    const COOLDOWN_TIME = 4 * 60 * 60 * 1000; // 4小时，单位毫秒
 
     // 页面加载时检查状态
     window.onload = function() {
@@ -300,13 +300,13 @@
         const btn = document.getElementById('start-btn');
         const timerDiv = document.getElementById('cooldown-timer');
         btn.disabled = true;
-        btn.innerText = "今日指引已生效";
+        btn.innerText = "占卜指引已生效";
         timerDiv.classList.remove('hidden');
 
         function update() {
             if (remainingTime <= 0) {
                 btn.disabled = false;
-                btn.innerText = "开始抽取今日指引";
+                btn.innerText = "开始抽取占卜指引";
                 timerDiv.classList.add('hidden');
                 return;
             }
@@ -482,7 +482,7 @@
                         </div>
                     </div>
                 </div>
-                <div style="margin-top:10px; color: var(--primary); font-weight:bold;">今日指引</div>
+                <div style="margin-top:10px; color: var(--primary); font-weight:bold;">占卜指引</div>
             </div>
             <div>
                 <div class="keyword-box">${card.name} ${card.reversed ? '(逆位)' : '(正位)'}</div>
