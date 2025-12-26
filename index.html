@@ -118,7 +118,8 @@
             border: 4px solid var(--primary);
         }
 
-        .card-name { font-weight: bold; font-size: 0.9rem; margin-top: 5px; }
+        .card-name { font-weight: bold; font-size: 0.9rem; margin-top: 5px; text-align: center; /* 强制文字居中，防止换行后长短不一靠左对齐 */
+    line-height: 1.2;   /* 调整行高，让两行文字间距更舒服 */}
         .card-num { font-size: 0.8rem; color: #7f8c8d; }
 
         .flipped { transform: rotateY(180deg) !important; }
@@ -212,8 +213,7 @@
 </div>
 
 <script>
-    /* === 塔罗数据 === */
-   /* === 塔罗数据 (威力加强详尽版) === */
+    /* === 塔罗数据 (威力加强详尽版) === */
     const tarotData = [
         { 
             name: "愚者 (The Fool)", 
@@ -399,9 +399,18 @@
                 return;
             }
             
-            const minutes = Math.floor(remainingTime / 60000);
-            const seconds = Math.floor((remainingTime % 60000) / 1000);
-            timerDiv.innerHTML = `塔罗牌充能中。<br>下次占卜倒计时：${minutes}分 ${seconds}秒`;
+            // 计算时、分、秒
+            const hours = Math.floor(remainingTime / (1000 * 60 * 60));
+            const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+            
+            let timeStr = "";
+            if (hours > 0) {
+                timeStr += hours + "小时 ";
+            }
+            timeStr += minutes + "分 " + seconds + "秒";
+
+            timerDiv.innerHTML = `塔罗牌充能中。<br>下次占卜倒计时：${timeStr}`;
             
             remainingTime -= 1000;
             setTimeout(update, 1000);
@@ -423,9 +432,19 @@
                 timerDiv.classList.add('hidden');
                 return;
             }
-            const minutes = Math.floor(remainingTime / 60000);
-            const seconds = Math.floor((remainingTime % 60000) / 1000);
-            timerDiv.innerText = `下次开启时间：${minutes}分 ${seconds}秒`;
+            
+            // 计算时、分、秒
+            const hours = Math.floor(remainingTime / (1000 * 60 * 60));
+            const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+            
+            let timeStr = "";
+            if (hours > 0) {
+                timeStr += hours + "小时 ";
+            }
+            timeStr += minutes + "分 " + seconds + "秒";
+
+            timerDiv.innerText = `下次开启时间：${timeStr}`;
             remainingTime -= 1000;
             setTimeout(update, 1000);
         }
@@ -569,9 +588,9 @@
         }, 1000);
     }
 
-    // 显示结果
+// 显示结果
     // card: 牌数据
-    // animate: 是否播放翻牌动画（如果是从缓存加载的，则设为false直接显示）
+    // animate: 是否播放翻牌动画
     function showResults(card, animate = true) {
         document.getElementById('section-deck').classList.add('hidden');
         document.getElementById('section-result').classList.remove('hidden');
@@ -589,7 +608,9 @@
                     <div class="card-face card-back"></div>
                     <div class="card-face card-front" style="background:${card.reversed ? '#e0e0e0' : '#f4e4bc'}">
                         <div class="card-num">${card.num}</div>
-                        <div class="card-name">${card.name}</div>
+                        
+                        <div class="card-name">${card.name.replace(' (', '<br>(')}</div>
+                        
                         <div style="margin-top:5px; font-size:0.8rem; color:${card.reversed ? '#c0392b' : '#27ae60'}">
                             ${card.reversed ? '逆位' : '正位'}
                         </div>
@@ -615,18 +636,14 @@
         container.appendChild(wrapper);
 
         if (animate) {
-            // 播放翻牌动画
             setTimeout(() => {
                 let visualCard = document.getElementById(`res-card-0`);
                 visualCard.classList.add(card.reversed ? 'flipped-reversed' : 'flipped');
             }, 500);
-            
-            // 开始倒计时
             startTimer(COOLDOWN_TIME);
         } else {
-            // 直接显示翻开状态
             let visualCard = document.getElementById(`res-card-0`);
-            visualCard.style.transition = 'none'; // 禁用动画
+            visualCard.style.transition = 'none'; 
             visualCard.classList.add(card.reversed ? 'flipped-reversed' : 'flipped');
         }
     }
