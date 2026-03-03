@@ -647,8 +647,7 @@
             visualCard.classList.add(card.reversed ? 'flipped-reversed' : 'flipped');
         }
     }
-</script>
-// === 可视化调试面板  ===
+    // === 可视化调试面板  ===
     (function initDebugPanel() {
         // 只有 URL 包含 ?test=true 时才显示面板
         if (!window.location.search.includes('test=true')) return;
@@ -694,5 +693,6 @@
             window.location.href = `${baseUrl}?debug=${idx}&rev=${isRev ? 1 : 0}&test=true`;
         };
     })();
+</script>
 </body>
 </html>
