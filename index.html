@@ -652,57 +652,66 @@
    功能：无视当前状态，一键渲染指定卡牌结果
    ========================================== */
 (function initSuperDebugPanel() {
-    // 1. 创建面板 UI
+    // 如果没有 ?test=1，直接结束运行，什么都不做
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('test') !== '1') {
+        return; 
+    }
+
+    // --- 以下为面板创建逻辑 ---
+
     const panel = document.createElement('div');
     panel.id = 'tarot-debug-panel';
+    // 稍微调整了样式，右上角增加了一个关闭按钮
     panel.style.cssText = `
         position: fixed; bottom: 10px; right: 10px; 
-        width: 220px; background: rgba(15, 15, 26, 0.95); 
+        width: 240px; background: rgba(15, 15, 26, 0.95); 
         border: 2px solid #d4af37; border-radius: 8px; 
-        padding: 15px; z-index: 99999; color: #d4af37; 
+        padding: 15px; z-index: 2147483647; color: #d4af37; 
         font-family: sans-serif; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        font-size: 14px;
     `;
 
-    // 2. 生成下拉菜单选项
+    // 生成下拉菜单
     let options = '';
-    // 确保 tarotData 存在
     if (typeof tarotData !== 'undefined') {
         tarotData.forEach((card, idx) => {
             options += `<option value="${idx}">[${idx}] ${card.name}</option>`;
         });
     }
 
-    // 3. 填充面板内容
     panel.innerHTML = `
-        <h4 style="margin:0 0 10px 0; border-bottom:1px solid #555; padding-bottom:5px; font-size:14px;">
-            🛠️ 塔罗测试控制台
-        </h4>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:10px;">
+            <strong style="color:#fff;">🛠️ 开发者模式</strong>
+            <span style="font-size:10px; color:#777;">Test Mode</span>
+        </div>
+        
         <div style="margin-bottom:8px;">
-            <select id="debug-card-select" style="width:100%; padding:5px; background:#333; color:white; border:1px solid #555;">
+            <label>选择卡牌:</label>
+            <select id="debug-card-select" style="width:100%; margin-top:3px; padding:5px; background:#333; color:white; border:1px solid #555;">
                 ${options}
             </select>
         </div>
-        <div style="margin-bottom:10px;">
-            <label style="cursor:pointer; display:flex; align-items:center; font-size:12px;">
-                <input type="checkbox" id="debug-rev-check" style="margin-right:5px;"> 强制逆位 (Reversed)
+
+        <div style="margin-bottom:12px;">
+            <label style="cursor:pointer; display:flex; align-items:center;">
+                <input type="checkbox" id="debug-rev-check" style="margin-right:6px;"> 强制逆位 (Reversed)
             </label>
         </div>
-        <div style="display:flex; gap:5px;">
-            <button id="debug-force-btn" style="flex:1; background:#d4af37; color:#000; border:none; padding:8px; cursor:pointer; font-weight:bold; border-radius:4px;">
-                立即显示
+
+        <div style="display:flex; gap:8px;">
+            <button id="debug-force-btn" style="flex:1; background:#d4af37; color:#000; border:none; padding:8px 0; cursor:pointer; font-weight:bold; border-radius:4px;">
+                立即渲染
             </button>
-            <button id="debug-reset-btn" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; cursor:pointer; border-radius:4px;">
-                重置冷却
+            <button id="debug-reset-btn" style="flex:1; background:#444; color:#fff; border:none; padding:8px 0; cursor:pointer; border-radius:4px;">
+                重置
             </button>
-        </div>
-        <div style="margin-top:5px; font-size:10px; color:#777; text-align:center;">
-            点击即生效，无需刷新
         </div>
     `;
 
     document.body.appendChild(panel);
 
-    // 4. 【核心逻辑】点击“立即显示”
+    // 【功能1】立即渲染
     document.getElementById('debug-force-btn').onclick = function() {
         const select = document.getElementById('debug-card-select');
         const isRev = document.getElementById('debug-rev-check').checked;
@@ -710,40 +719,31 @@
 
         if (isNaN(idx)) return;
 
-        console.log(`[Debug] 强制渲染: Index ${idx}, 逆位: ${isRev}`);
-
-        // A. 强制清除冷却限制 (防止逻辑拦截)
+        // 1. 清除本地存储限制
         localStorage.removeItem('tarot_last_time');
         localStorage.removeItem('tarot_last_card');
 
-        // B. 构造卡牌数据
-        // 使用 ... 语法复制数据，避免修改原始 tarotData
-        const targetCard = { 
-            ...tarotData[idx], 
-            reversed: isRev,
-            id: 'DEBUG_' + Date.now() 
-        };
+        // 2. 构造数据
+        const targetCard = { ...tarotData[idx], reversed: isRev, id: 'DEBUG_' + Date.now() };
 
-        // C. 【关键】暴力隐藏所有其他界面
+        // 3. 强制切换视图
         document.getElementById('section-start').classList.add('hidden');
         document.getElementById('section-deck').classList.add('hidden');
-        
-        // D. 显示结果页容器
         document.getElementById('section-result').classList.remove('hidden');
 
-        // E. 调用原本的渲染函数
-        // 第二个参数 false 代表“不播放翻牌动画”，直接出结果，方便测试
+        // 4. 调用显示函数 (false = 无动画)
         if (typeof showResults === 'function') {
-            showResults(targetCard, false); 
-        } else {
-            alert("错误：找不到 showResults 函数！");
+            showResults(targetCard, false);
+            console.log(`[Test] Rendered: ${targetCard.name}`);
         }
     };
 
-    // 5. 点击“重置冷却”
+    // 【功能2】重置并刷新
     document.getElementById('debug-reset-btn').onclick = function() {
-        localStorage.clear();
-        location.reload(); // 只有重置才需要刷新
+        if(confirm("确定要清除缓存并刷新页面吗？")) {
+            localStorage.clear();
+            location.reload(); // 刷新后依然保持 ?test=1，方便继续测试
+        }
     };
 
 })();
